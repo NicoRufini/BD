@@ -55,6 +55,8 @@ ORDER BY persona.id;
 -- ..Se i due COUNT() sono uguali allore appariranno nella tabella.
 
 
+-- Second commit BD  
+
 
 
 
