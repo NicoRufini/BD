@@ -30,7 +30,7 @@ INNER JOIN assenza ON persona.id = assenza.persona
 WHERE  assenza.giorno != attivitaprogetto.giorno AND assenza.giorno != attivitanonprogettuale.giorno
 );
 
--- Usare il case ed assegnare 1 usa poi ALL
+-- 
 
 WITH assenze_senza_attivita AS (
     SELECT persona.id, persona.nome, persona.cognome,
@@ -49,15 +49,59 @@ WHERE ass_sen_att = ALL (
     WHERE ass_sen_att = 1)
 ORDER BY persona.id;
 
+-- \\\\\\\\\\\
+WITH assenze_senza_attivita AS (
+    SELECT persona.id, persona.nome, persona.cognome,
+    CASE
+        WHEN assenza.giorno != attivitaprogetto.giorno AND assenza.giorno != attivitanonprogettuale.giorno
+            AND NOT (assenza.giorno = attivitaprogetto.giorno AND assenza.giorno = attivitanonprogettuale.giorno)
+        THEN 1 ELSE 0  END as ass_sen_att
+    FROM persona
+    INNER JOIN attivitaprogetto ON persona.id = attivitaprogetto.persona
+    INNER JOIN attivitanonprogettuale ON persona.id = attivitanonprogettuale.persona
+    INNER JOIN assenza ON persona.id = assenza.persona
+)
+SELECT DISTINCT persona.id, persona.nome, persona.cognome FROM persona
+CROSS JOIN assenze_senza_attivita
+WHERE ass_sen_att = ALL (
+    SELECT ass_sen_att FROM assenze_senza_attivita
+    WHERE ass_sen_att = 1)
+ORDER BY persona.id;
 
--- Forse ALL non è necessario, potrei usare più di un WITH.
+
 -- Confrontare il COUNT() delle assenze generiche per persona con il COUNT() delle assenze per persona che rispettano la condizione ass_sen_att. ..
 -- ..Se i due COUNT() sono uguali allore appariranno nella tabella.
 
+WITH assenze_generiche AS (
+    SELECT persona, COUNT(persona) AS ass_gen FROM assenza
+    GROUP BY persona
+),
+assenze_senza_attivita AS ( 
+    SELECT assenza.persona, COUNT(assenza.persona) AS ass_sen_att FROM assenza
+    INNER JOIN attivitaprogetto ON assenza.persona = attivitaprogetto.persona
+    INNER JOIN attivitanonprogettuale ON assenza.persona = attivitanonprogettuale.persona
+    INNER JOIN persona ON persona.id = assenza.persona
+    WHERE assenza.giorno != attivitaprogetto.giorno AND assenza.giorno != attivitanonprogettuale.giorno --\\\
+    GROUP BY assenza.persona
+)
 
--- Second commit BD  
+SELECT persona.id, persona.nome, persona.cognome FROM assenza
+LEFT JOIN attivitaprogetto ON assenza.persona = attivitaprogetto.persona
+LEFT JOIN attivitanonprogettuale ON assenza.persona = attivitanonprogettuale.persona
+LEFT JOIN persona ON persona.id = assenza.persona
+WHERE assenza.giorno != attivitaprogetto.giorno AND assenza.giorno != attivitanonprogettuale.giorno;
 
--- Terzo commit BD
+
+
+
+SELECT DISTINCT persona.id, persona.nome, persona.cognome FROM persona
+LEFT JOIN attivitaprogetto ON persona.id = attivitaprogetto.persona
+LEFT JOIN attivitanonprogettuale ON persona.id = attivitanonprogettuale.persona
+LEFT JOIN assenza ON persona.id = assenza.persona
+ORDER BY persona.id;
+
+
+
 
 
 
