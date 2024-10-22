@@ -100,11 +100,68 @@ LEFT JOIN attivitanonprogettuale ON persona.id = attivitanonprogettuale.persona
 LEFT JOIN assenza ON persona.id = assenza.persona
 ORDER BY persona.id;
 
+-- Primo risultato
+WITH attivita AS (
+SELECT persona, giorno FROM attivitaprogetto
+UNION
+SELECT persona, giorno FROM attivitanonprogettuale
+), 
+assenze_senza_attivita AS (
+    SELECT assenza.giorno, assenza.persona,
+    CASE
+        WHEN assenza.giorno != attivita.giorno
+        THEN 1 ELSE 0 END AS ass_att_gio
+    FROM assenza
+    INNER JOIN attivita ON assenza.persona = attivita.persona
+)
+SELECT DISTINCT persona.id, persona.nome, persona.cognome FROM persona, assenze_senza_attivita
+WHERE persona.id NOT IN (
+    SELECT assenze_senza_attivita.persona FROM assenze_senza_attivita
+    WHERE ass_att_gio = 0
+)
+ORDER BY persona.id;
+
+-- Secondo risultato CG
+WITH attivita AS (
+SELECT persona, giorno FROM attivitaprogetto
+UNION
+SELECT persona, giorno FROM attivitanonprogettuale
+), 
+assenze_senza_attivita AS (
+    SELECT assenza.giorno, assenza.persona,
+    CASE
+        WHEN assenza.giorno != attivita.giorno
+        THEN 1 ELSE 0 END AS ass_att_gio
+    FROM assenza
+    LEFT JOIN attivita ON assenza.persona = attivita.persona AND assenza.giorno = attivita.giorno
+)
+SELECT DISTINCT persona.id, persona.nome, persona.cognome FROM persona, assenze_senza_attivita
+WHERE persona.id NOT IN (
+    SELECT assenze_senza_attivita.persona FROM assenze_senza_attivita
+    WHERE ass_att_gio = 0
+)
+ORDER BY persona.id;
 
 
 
 
 
+assenze_senza_attivita AS ( 
+    SELECT assenza.persona, COUNT(assenza.giorno) AS ass_sen_att FROM assenza
+    INNER JOIN attivita ON attivita.persona = assenza.persona
+    WHERE assenza.giorno != attivita.giorno
+    GROUP BY assenza.persona
+),
+assenze_generiche AS (
+    SELECT persona, COUNT(giorno) AS ass_gen FROM assenza
+    GROUP BY persona
+    ORDER BY persona;
+)
+
+SELECT DISTINCT persona.id, persona.nome, persona.cognome FROM persona
+LEFT JOIN attivita ON persona.id = attivita.persona
+LEFT JOIN assenza ON persona.id = assenza.persona
+ORDER BY persona.id;
 
 
 
