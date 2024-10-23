@@ -144,19 +144,13 @@ ORDER BY persona.id;
 
 "3. Quali sono id, nome, cognome e stipendio dei ricercatori con stipendio maggiore
 di tutti i professori (associati e ordinari)?"
-
-
 WITH professori AS (
-    SELECT posizione, MAX(stipendio) AS stipendio_professori FROM persona
+    SELECT MAX(stipendio) AS stipendio_professori FROM persona
     WHERE posizione IN ('Professore Associato', 'Professore Ordinario')
-    GROUP BY posizione;
 )
-
-
-
-
-SELECT persona.id, persona.nome, persona.cognome FROM persona
+SELECT DISTINCT persona.id, persona.nome, persona.cognome, persona.stipendio, professori.stipendio_professori FROM persona
 LEFT JOIN professori ON persona.stipendio > stipendio_professori
+WHERE stipendio_professori IS NOT NULL;
 
 
 
