@@ -85,16 +85,20 @@ ORDER BY persona.id;
 
 "2. Quali sono le persone (id, nome e cognome) che non hanno mai partecipato ad
 alcun progetto durante la durata del progetto “Pegasus”?"
-
-WITH pegasus_e_attivitaprogetto AS ( --progetto id "Pegasus" = 1 - join progetto
-    SELECT attivitaprogetto.progetto, attivitaprogetto.persona, attivitaprogetto.giorno FROM attivitaprogetto, progetto
-    WHERE attivitaprogetto.progetto = 1 AND giorno BETWEEN progetto.inizio AND progetto.fine
+WITH progetto_pegasus AS (
+    SELECT inizio, fine FROM progetto
+    WHERE progetto.id = 1
+),
+pegasus_e_attivitaprogetto AS (
+    SELECT attivitaprogetto.progetto, attivitaprogetto.persona, attivitaprogetto.giorno, progetto_pegasus.inizio FROM attivitaprogetto
+    LEFT JOIN progetto_pegasus ON attivitaprogetto.giorno BETWEEN progetto_pegasus.inizio AND progetto_pegasus.fine
+    WHERE progetto_pegasus.inizio IS NOT NULL
 )
-
-
-
-
-
+SELECT DISTINCT persona.id, persona.nome, persona.cognome FROM persona, pegasus_e_attivitaprogetto
+WHERE persona.id NOT IN (
+    SELECT pegasus_e_attivitaprogetto.persona FROM pegasus_e_attivitaprogetto
+)
+ORDER BY persona.id;
 
 
 
@@ -140,6 +144,44 @@ WITH pegasus_e_attivitaprogetto AS ( --progetto id "Pegasus" = 1 - join progetto
 
 "3. Quali sono id, nome, cognome e stipendio dei ricercatori con stipendio maggiore
 di tutti i professori (associati e ordinari)?"
+
+
+WITH professori AS (
+    SELECT posizione, MAX(stipendio) AS stipendio_professori FROM persona
+    WHERE posizione IN ('Professore Associato', 'Professore Ordinario')
+    GROUP BY posizione;
+)
+
+
+
+
+SELECT persona.id, persona.nome, persona.cognome FROM persona
+LEFT JOIN professori ON persona.stipendio > stipendio_professori
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 "4. Quali sono le persone che hanno lavorato su progetti con un budget superiore alla
 media dei budget di tutti i progetti?"
