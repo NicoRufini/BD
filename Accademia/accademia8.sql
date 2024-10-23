@@ -33,7 +33,7 @@ WHERE persona.id NOT IN (
 )
 ORDER BY persona.id;
 
--- Secondo risultato CG
+-- Secondo risultato
 WITH attivita AS (
 SELECT persona, giorno FROM attivitaprogetto
 UNION
@@ -54,35 +54,6 @@ WHERE persona.id NOT IN (
 )
 ORDER BY persona.id;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 "2. Quali sono le persone (id, nome e cognome) che non hanno mai partecipato ad
 alcun progetto durante la durata del progetto “Pegasus”?"
 WITH progetto_pegasus AS (
@@ -100,50 +71,9 @@ WHERE persona.id NOT IN (
 )
 ORDER BY persona.id;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 "3. Quali sono id, nome, cognome e stipendio dei ricercatori con stipendio maggiore
 di tutti i professori (associati e ordinari)?"
+-- Con LEFT JOIN
 WITH professori AS (
     SELECT MAX(stipendio) AS stipendio_professori FROM persona
     WHERE posizione IN ('Professore Associato', 'Professore Ordinario')
@@ -152,33 +82,32 @@ SELECT DISTINCT persona.id, persona.nome, persona.cognome, persona.stipendio, pr
 LEFT JOIN professori ON persona.stipendio > stipendio_professori
 WHERE stipendio_professori IS NOT NULL;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+-- Con INNER JOIN
+WITH professori AS (
+    SELECT MAX(stipendio) AS stipendio_professori FROM persona
+    WHERE posizione IN ('Professore Associato', 'Professore Ordinario')
+)
+SELECT DISTINCT persona.id, persona.nome, persona.cognome, persona.stipendio, professori.stipendio_professori FROM persona
+INNER JOIN professori ON persona.stipendio > stipendio_professori;
 
 "4. Quali sono le persone che hanno lavorato su progetti con un budget superiore alla
 media dei budget di tutti i progetti?"
+SELECT persona.id, persona.nome, persona.cognome FROM attivitaprogetto
+INNER JOIN persona ON persona.id = attivitaprogetto.persona
+INNER JOIN progetto ON progetto.id = attivitaprogetto.progetto
+WHERE progetto.budget > (
+    SELECT AVG(budget) AS media_budget_progetto FROM progetto
+);
 
 "5. Quali sono i progetti con un budget inferiore allala media, ma con un numero
 complessivo di ore dedicate alle attività di ricerca sopra la media?"
+SELECT DISTINCT progetto.id, progetto.nome FROM attivitaprogetto
+INNER JOIN persona ON persona.id = attivitaprogetto.persona
+INNER JOIN progetto ON progetto.id = attivitaprogetto.progetto
+WHERE progetto.budget < (
+    SELECT AVG(budget) AS media_budget_progetto FROM progetto
+) 
+AND attivitaprogetto.oredurata > (
+    SELECT AVG(oredurata) FROM attivitaprogetto
+    WHERE tipo = 'Ricerca e Sviluppo'
+);
