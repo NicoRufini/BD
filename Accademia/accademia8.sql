@@ -86,6 +86,57 @@ ORDER BY persona.id;
 "2. Quali sono le persone (id, nome e cognome) che non hanno mai partecipato ad
 alcun progetto durante la durata del progetto “Pegasus”?"
 
+WITH pegasus_e_attivitaprogetto AS ( --progetto id "Pegasus" = 1 - join progetto
+    SELECT attivitaprogetto.progetto, attivitaprogetto.persona, attivitaprogetto.giorno FROM attivitaprogetto, progetto
+    WHERE attivitaprogetto.progetto = 1 AND giorno BETWEEN progetto.inizio AND progetto.fine
+)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 "3. Quali sono id, nome, cognome e stipendio dei ricercatori con stipendio maggiore
 di tutti i professori (associati e ordinari)?"
