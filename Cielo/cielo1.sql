@@ -42,7 +42,7 @@ INNER JOIN arrpart ON arrpart.comp = compagnia.nome
 WHERE arrpart.partenza = 'FCO' AND arrpart.arrivo = 'JFK';
 
 "7. Quali sono i nomi delle compagnie che hanno voli diretti dalla città di 'Roma' alla
-città di 'New York'?"
+città di 'New York'?" --
 SELECT DISTINCT compagnia.nome FROM arrpart
 INNER JOIN compagnia ON arrpart.comp = compagnia.nome
 INNER JOIN luogoaeroporto ON arrpart.partenza = luogoaeroporto.aeroporto 
@@ -58,24 +58,42 @@ WHERE arrpart.comp = 'MagicFly';
 
 "9. Quali sono i voli che partono da un qualunque aeroporto della città di 'Roma' e
 atterrano ad un qualunque aeroporto della città di 'New York'? Restituire: codice
-del volo, nome della compagnia, e aeroporti di partenza e arrivo." --\ INNER JOIN compagnia ON volo.comp
-SELECT volo.codice, volo.comp, arrpart.partenza, arrpart.arrivo FROM volo
-INNER JOIN arrpart ON arrpart.partenza = volo.codice 
-    OR arrpart.partenza = aeroporto.arrivo
-INNER JOIN luogoaeroporto ON luogoaeroporto.aeroporto = volo.codice 
-WHERE luogoaeroporto.citta = 'Roma' AND luogoaeroporto.citta = 'New York';
-
---
-SELECT volo.codice, volo.comp, arrpart.partenza, arrpart.arrivo FROM volo
-INNER JOIN JOIN arrpart ON arrpart.partenza = volo.codice --\
-    OR arrpart.arrivo = volo.codice
-INNER JOIN compagnia ON volo.comp = compagnia.nome
-WHERE luogoaeroporto.citta = 'Roma' AND luogoaeroporto.citta = 'New York';
+del volo, nome della compagnia, e aeroporti di partenza e arrivo."
+SELECT arrpart.* FROM arrpart
+INNER JOIN luogoaeroporto ON luogoaeroporto.aeroporto = arrpart.partenza
+    OR luogoaeroporto.aeroporto = arrpart.arrivo
+WHERE luogoaeroporto.citta = 'New York' AND arrpart.partenza IN ('FCO', 'CIA')
+    AND arrpart.arrivo = 'JFK';
 
 "10. Quali sono i possibili piani di volo con esattamente un cambio (utilizzando solo
 voli della stessa compagnia) da un qualunque aeroporto della città di 'Roma' ad un
 qualunque aeroporto della città di 'New York'? Restituire: nome della compagnia,
 codici dei voli, e aeroporti di partenza, scalo e arrivo."
+SELECT * FROM arrpart
+WHERE arrpart.partenza = arrpart.arrivo;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 "11. Quali sono le compagnie che hanno voli che partono dall'aeroporto 'FCO', atterrano
 all'aeroporto 'JFK', e di cui si conosce l'anno di fondazione?"
