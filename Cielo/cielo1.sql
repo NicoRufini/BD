@@ -68,7 +68,7 @@ WHERE luogoaeroporto.citta = 'Roma' AND luogoaeroporto.citta = 'New York';
 --
 SELECT volo.codice, volo.comp, arrpart.partenza, arrpart.arrivo FROM volo
 INNER JOIN JOIN arrpart ON arrpart.partenza = volo.codice --\
-    OR arrpart.partenza = aeroporto.arrivo
+    OR arrpart.arrivo = volo.codice
 INNER JOIN compagnia ON volo.comp = compagnia.nome
 WHERE luogoaeroporto.citta = 'Roma' AND luogoaeroporto.citta = 'New York';
 
