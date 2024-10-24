@@ -51,11 +51,26 @@ WHERE luogoaeroporto.citta IN ('Roma', 'New York');
 
 "8. Quali sono gli aeroporti (con codice IATA, nome e luogo) nei quali partono voli
 della compagnia di nome 'MagicFly'?"
-
+SELECT aeroporto.codice, aeroporto.nome, luogoaeroporto.citta FROM aeroporto
+INNER JOIN luogoaeroporto ON aeroporto.codice = luogoaeroporto.aeroporto
+INNER JOIN arrpart ON arrpart.partenza = aeroporto.codice
+WHERE arrpart.comp = 'MagicFly';
 
 "9. Quali sono i voli che partono da un qualunque aeroporto della città di 'Roma' e
 atterrano ad un qualunque aeroporto della città di 'New York'? Restituire: codice
-del volo, nome della compagnia, e aeroporti di partenza e arrivo."
+del volo, nome della compagnia, e aeroporti di partenza e arrivo." --\ INNER JOIN compagnia ON volo.comp
+SELECT volo.codice, volo.comp, arrpart.partenza, arrpart.arrivo FROM volo
+INNER JOIN arrpart ON arrpart.partenza = volo.codice 
+    OR arrpart.partenza = aeroporto.arrivo
+INNER JOIN luogoaeroporto ON luogoaeroporto.aeroporto = volo.codice 
+WHERE luogoaeroporto.citta = 'Roma' AND luogoaeroporto.citta = 'New York';
+
+--
+SELECT volo.codice, volo.comp, arrpart.partenza, arrpart.arrivo FROM volo
+INNER JOIN JOIN arrpart ON arrpart.partenza = volo.codice --\
+    OR arrpart.partenza = aeroporto.arrivo
+INNER JOIN compagnia ON volo.comp = compagnia.nome
+WHERE luogoaeroporto.citta = 'Roma' AND luogoaeroporto.citta = 'New York';
 
 "10. Quali sono i possibili piani di volo con esattamente un cambio (utilizzando solo
 voli della stessa compagnia) da un qualunque aeroporto della città di 'Roma' ad un
