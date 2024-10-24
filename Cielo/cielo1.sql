@@ -69,26 +69,17 @@ WHERE luogoaeroporto.citta = 'New York' AND arrpart.partenza IN ('FCO', 'CIA')
 voli della stessa compagnia) da un qualunque aeroporto della città di 'Roma' ad un
 qualunque aeroporto della città di 'New York'? Restituire: nome della compagnia,
 codici dei voli, e aeroporti di partenza, scalo e arrivo."
-SELECT * FROM arrpart
-WHERE arrpart.partenza = arrpart.arrivo;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+WITH volo1_tabella AS (
+    SELECT DISTINCT arrpart.comp, arrpart.partenza, arrpart.codice, arrpart.arrivo FROM arrpart
+    INNER JOIN luogoaeroporto ON luogoaeroporto.aeroporto = arrpart.partenza
+    OR luogoaeroporto.aeroporto = arrpart.arrivo
+    WHERE arrpart.partenza IN ('FCO', 'CIA') AND arrpart.arrivo IN ('FCO', 'CIA')
+)
+SELECT DISTINCT arrpart.comp, volo1_tabella.codice AS codice_volo_1, volo1_tabella.partenza, volo1_tabella.arrivo AS scalo, arrpart.codice AS codice_volo_2, arrpart.arrivo FROM arrpart
+INNER JOIN volo1_tabella ON volo1_tabella.arrivo = arrpart.partenza AND volo1_tabella.comp = arrpart.comp
+INNER JOIN luogoaeroporto ON luogoaeroporto.aeroporto = arrpart.partenza 
+    OR luogoaeroporto.aeroporto = arrpart.arrivo
+WHERE arrpart.arrivo = 'JFK';
 
 
 
