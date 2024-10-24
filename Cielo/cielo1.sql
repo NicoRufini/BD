@@ -81,12 +81,10 @@ INNER JOIN luogoaeroporto ON luogoaeroporto.aeroporto = arrpart.partenza
     OR luogoaeroporto.aeroporto = arrpart.arrivo
 WHERE arrpart.arrivo = 'JFK';
 
-
-
-
-
-
 "11. Quali sono le compagnie che hanno voli che partono dall'aeroporto 'FCO', atterrano
 all'aeroporto 'JFK', e di cui si conosce l'anno di fondazione?"
-
+SELECT arrpart.comp FROM arrpart
+INNER JOIN compagnia ON compagnia.nome = arrpart.comp
+WHERE arrpart.partenza = 'FCO' AND arrpart.arrivo = 'JFK'
+    AND annofondaz IS NOT NULL;
 
