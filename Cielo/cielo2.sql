@@ -38,20 +38,16 @@ WHERE comp = 'MagicFly';
 
 "5. Qual è l'anno di fondazione della compagnia più vecchia che opera in ognuno degli
 aeroporti?"
+--- Funziona ma forse lo puoi migliorare
 WITH arrpart_volo AS (
     SELECT arrpart.partenza AS arr_volo FROM arrpart
     UNION
     SELECT arrpart.arrivo FROM arrpart
-),
-compagnia_arrpart_volo AS (
-    SELECT arrpart_volo.arr_volo, aeroporto.nome, compagnia.annofondaz FROM compagnia, arrpart_volo
-    INNER JOIN aeroporto ON aeroporto.codice = arrpart_volo.arr_volo
 )
-SELECT compagnia_arrpart_volo.arr_volo, compagnia_arrpart_volo.nome, MIN(compagnia_arrpart_volo.annofondaz) AS anno FROM compagnia_arrpart_volo
-GROUP BY compagnia_arrpart_volo.arr_volo, compagnia_arrpart_volo.nome;
-
----
-SELECT arrpart_volo.arr_volo, aeroporto.nome, MIN(compagnia.annofondaz) AS anno FROM compagnia, arrpart_volo
+SELECT arrpart_volo.arr_volo, aeroporto.nome, MIN(compagnia.annofondaz) AS anno FROM arrpart
+INNER JOIN arrpart_volo ON arrpart_volo.arr_volo = arrpart.partenza OR arrpart_volo.arr_volo = arrpart.arrivo
+INNER JOIN volo ON volo.codice = arrpart.codice
+INNER JOIN compagnia ON volo.comp = compagnia.nome
 INNER JOIN aeroporto ON aeroporto.codice = arrpart_volo.arr_volo
 GROUP BY arrpart_volo.arr_volo, aeroporto.nome;
 
