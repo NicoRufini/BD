@@ -10,34 +10,10 @@ SELECT * FROM volo;
 
 "1. Quante sono le compagnie che operano (sia in arrivo che in partenza) nei diversi
 aeroporti?"
-
---- questo va bene
-SELECT aeroporto.codice, aeroporto.nome, COUNT(arrpart.comp) AS num_compagnie FROM arrpart
+--- questo va bene |||
+SELECT aeroporto.codice, aeroporto.nome, COUNT(DISTINCT arrpart.comp) AS num_compagnie FROM arrpart
 INNER JOIN aeroporto ON aeroporto.codice = arrpart.partenza OR aeroporto.codice = arrpart.arrivo
 GROUP BY  aeroporto.codice, aeroporto.nome;
-
-SELECT aeroporto.codice, aeroporto.nome, arrpart.partenza, arrpart.arrivo FROM arrpart
-INNER JOIN aeroporto ON aeroporto.codice = arrpart.partenza OR aeroporto.codice = arrpart.arrivo
-
--- c
-SELECT arrpart.partenza, arrpart.arrivo, count(arrpart.partenza) AS count_partenza, count(arrpart.arrivo) AS count_arrivo FROM arrpart
-GROUP BY arrpart.partenza, arrpart.arrivo
-
-
-
-SELECT arrpart.partenza, arrpart.arrivo FROM arrpart
-
-------
--- INNER JOIN compagnia ON compagnia.nome = arrpart.comp
-
-
-SELECT compagnia.nome, (COUNT(arrpart.partenza) + COUNT(arrpart.arrivo)) AS num_compagnie FROM arrpart, compagnia
-WHERE arrpart.partenza IS NOT NULL AND arrpart.arrivo IS NOT NULL
-GROUP BY compagnia.nome;
-
-
-
-
 
 
 "2. Quanti sono i voli che partono dall'aeroporto 'HTR' e hanno una durata di almeno
