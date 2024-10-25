@@ -53,7 +53,10 @@ GROUP BY arrpart_volo.arr_volo, aeroporto.nome;
 
 "6. Quante sono le nazioni (diverse) raggiungibili da ogni nazione tramite uno o più
 voli?"
-
+--- \
+SELECT luogoaeroporto.nazione, COUNT(DISTINCT arrpart.arrivo) AS raggiungibili FROM luogoaeroporto
+INNER JOIN arrpart ON luogoaeroporto.aeroporto = arrpart.arrivo
+GROUP BY luogoaeroporto.nazione;
 
 "7. Qual è la durata media dei voli che partono da ognuno degli aeroporti?"
 
