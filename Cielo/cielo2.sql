@@ -62,12 +62,15 @@ GROUP BY luogoaeroporto.nazione;
 
 "7. Qual è la durata media dei voli che partono da ognuno degli aeroporti?"
 SELECT arrpart.partenza, AVG(volo.durataminuti)::NUMERIC(10, 2) AS durata_media FROM arrpart
-INNER JOIN volo ON volo.codice = arrpart.codice --\
+INNER JOIN volo ON volo.codice = arrpart.codice
 GROUP BY arrpart.partenza;
 
 "8. Qual è la durata complessiva dei voli operati da ognuna delle compagnie fondate
 a partire dal 1950?"
-
+SELECT volo.comp, SUM(volo.durataminuti) AS durata_complessiva FROM volo
+INNER JOIN compagnia ON compagnia.nome = volo.comp
+WHERE compagnia.annofondaz >= 1950
+GROUP BY volo.comp;
 
 "9. Quali sono gli aeroporti nei quali operano esattamente due compagnie?"
 
