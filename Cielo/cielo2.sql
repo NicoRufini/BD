@@ -18,15 +18,23 @@ GROUP BY  aeroporto.codice, aeroporto.nome;
 
 "2. Quanti sono i voli che partono dall'aeroporto 'HTR' e hanno una durata di almeno
 100 minuti?"
-
+SELECT COUNT(volo.codice) AS num_voli FROM volo
+INNER JOIN arrpart ON volo.codice = arrpart.codice
+WHERE arrpart.partenza = 'HTR' AND volo.durataminuti >= 100;
 
 "3. Quanti sono gli aeroporti sui quali opera la compagnia 'Apitalia', per ogni nazione
 nella quale opera?"
-
+SELECT DISTINCT COUNT(DISTINCT luogoaeroporto.aeroporto) AS num_aeroporti, luogoaeroporto.nazione FROM arrpart
+INNER JOIN luogoaeroporto ON luogoaeroporto.aeroporto = arrpart.partenza
+    OR luogoaeroporto.aeroporto = arrpart.arrivo
+WHERE arrpart.comp = 'Apitalia'
+GROUP BY luogoaeroporto.nazione
+ORDER BY num_aeroporti DESC;
 
 "4. Qual è la media, il massimo e il minimo della durata dei voli effettuati dalla
 compagnia 'MagicFly'?"
-
+SELECT DISTINCT MAX(durataminuti) AS massimo_MagicFly, MIN(durataminuti) AS minimo_MagicFly, AVG(durataminuti)::NUMERIC(10,2) AS media_MagicFly FROM volo
+WHERE comp = 'MagicFly';
 
 "5. Qual è l'anno di fondazione della compagnia più vecchia che opera in ognuno degli
 aeroporti?"
