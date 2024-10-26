@@ -73,15 +73,37 @@ WHERE compagnia.annofondaz >= 1950
 GROUP BY volo.comp;
 
 "9. Quali sono gli aeroporti nei quali operano esattamente due compagnie?"
-
+SELECT aeroporto.codice, aeroporto.nome FROM arrpart
+INNER JOIN aeroporto ON aeroporto.codice = arrpart.partenza
+    OR aeroporto.codice = arrpart.arrivo
+GROUP BY aeroporto.codice
+HAVING COUNT(DISTINCT arrpart.comp) = 2;
 
 "10. Quali sono le città con almeno due aeroporti?"
-
+SELECT citta FROM luogoaeroporto
+GROUP BY luogoaeroporto.citta
+HAVING COUNT(luogoaeroporto.aeroporto) = 2;
 
 "11. Qual è il nome delle compagnie i cui voli hanno una durata media maggiore di 6
 ore?"
-
+SELECT comp FROM volo
+GROUP BY comp
+HAVING AVG(durataminuti) > 360;
 
 "12. Qual è il nome delle compagnie i cui voli hanno tutti una durata maggiore di 100
 minuti?"
+SELECT comp FROM volo
+WHERE comp IN (
+    SELECT comp FROM volo
+    WHERE durataminuti > 100
+)
+AND comp NOT IN (
+    SELECT comp FROM volo
+    WHERE durataminuti <= 100
+);
+
+
+
+
+
 
