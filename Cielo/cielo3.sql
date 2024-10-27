@@ -8,6 +8,8 @@ SELECT * FROM luogoaeroporto;
 
 SELECT * FROM volo;
 
+-- |||
+
 "1. Qual è la durata media, per ogni compagnia, dei voli che partono da un aeroporto
 situato in Italia?"
 SELECT volo.comp, AVG(volo.durataminuti)::NUMERIC(10, 2) AS durata_media FROM volo
@@ -35,24 +37,24 @@ WITH voli_arrivo_query AS (
 media_voli_arrivo_query AS (
     SELECT AVG(voli_arrivo_query.voli_arrivo) AS media_voli_arrivo FROM arrpart, voli_arrivo_query
 )
-SELECT citta FROM voli_arrivo_query, media_voli_arrivo_query
+SELECT citta, voli_arrivo FROM voli_arrivo_query, media_voli_arrivo_query
 WHERE voli_arrivo > media_voli_arrivo;
 
 "4. Quali sono le compagnie aeree che hanno voli in partenza da aeroporti in Italia con
 una durata media inferiore alla durata media di tutti i voli in partenza da aeroporti
 in Italia?"
---- Prima soluzione
+--- Prima soluzione - durata_media NON è quella del risultato
 WITH voli_partenza_italia_durata_media_query AS (
     SELECT AVG(volo.durataminuti) AS voli_partenza_italia_durata_media FROM volo
     INNER JOIN arrpart ON arrpart.codice = volo.codice
     INNER JOIN luogoaeroporto ON luogoaeroporto.aeroporto = arrpart.partenza
     WHERE luogoaeroporto.nazione = 'Italy'
 )
-SELECT arrpart.comp, voli_partenza_italia_durata_media_query.voli_partenza_italia_durata_media FROM arrpart
+SELECT arrpart.comp, AVG(volo.durataminuti) AS durata_media FROM arrpart
 INNER JOIN volo ON arrpart.codice = volo.codice
 INNER JOIN luogoaeroporto ON luogoaeroporto.aeroporto = arrpart.partenza
 WHERE luogoaeroporto.nazione = 'Italy'
-GROUP BY arrpart.comp, voli_partenza_italia_durata_media_query.voli_partenza_italia_durata_media
+GROUP BY arrpart.comp
 HAVING AVG(volo.durataminuti) < (SELECT * FROM voli_partenza_italia_durata_media_query);
 
 -- Seconda soluzione
