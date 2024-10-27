@@ -41,9 +41,47 @@ WHERE voli_arrivo > media_voli_arrivo;
 "4. Quali sono le compagnie aeree che hanno voli in partenza da aeroporti in Italia con
 una durata media inferiore alla durata media di tutti i voli in partenza da aeroporti
 in Italia?"
+--- Prima soluzione
+WITH voli_partenza_italia_durata_media_query AS (
+    SELECT AVG(volo.durataminuti) AS voli_partenza_italia_durata_media FROM volo
+    INNER JOIN arrpart ON arrpart.codice = volo.codice
+    INNER JOIN luogoaeroporto ON luogoaeroporto.aeroporto = arrpart.partenza
+    WHERE luogoaeroporto.nazione = 'Italy'
+)
+SELECT arrpart.comp, voli_partenza_italia_durata_media_query.voli_partenza_italia_durata_media FROM arrpart
+INNER JOIN volo ON arrpart.codice = volo.codice
+INNER JOIN luogoaeroporto ON luogoaeroporto.aeroporto = arrpart.partenza
+WHERE luogoaeroporto.nazione = 'Italy'
+GROUP BY arrpart.comp, voli_partenza_italia_durata_media_query.voli_partenza_italia_durata_media
+HAVING AVG(volo.durataminuti) < (SELECT * FROM voli_partenza_italia_durata_media_query);
+
+-- Seconda soluzione
+WITH voli_partenza_italia_durata_media_query AS (
+    SELECT AVG(volo.durataminuti) AS voli_partenza_italia_durata_media FROM volo
+    INNER JOIN arrpart ON arrpart.codice = volo.codice
+    INNER JOIN luogoaeroporto ON luogoaeroporto.aeroporto = arrpart.partenza
+    WHERE luogoaeroporto.nazione = 'Italy'
+)
+SELECT arrpart.comp, voli_partenza_italia_durata_media_query.voli_partenza_italia_durata_media AS durata_media FROM arrpart
+CROSS JOIN voli_partenza_italia_durata_media_query -- ?
+INNER JOIN volo ON arrpart.codice = volo.codice
+INNER JOIN luogoaeroporto ON luogoaeroporto.aeroporto = arrpart.partenza
+WHERE luogoaeroporto.nazione = 'Italy'
+GROUP BY arrpart.comp, voli_partenza_italia_durata_media_query.voli_partenza_italia_durata_media
+HAVING AVG(volo.durataminuti) < voli_partenza_italia_durata_media_query.voli_partenza_italia_durata_media;
 
 
 
+
+
+
+
+
+-- INNER JOIN luogoaeroporto ON arrpart.partenza = luogoaeroporto.aeroporto
+-- INNER JOIN volo ON 
+
+
+SELECT arrpart.comp FROM arrpart
 
 
 
