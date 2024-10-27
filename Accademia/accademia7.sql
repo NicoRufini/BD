@@ -34,7 +34,7 @@ WHERE posizione = 'Ricercatore' AND persona.stipendio > ricercatori_media.media_
 
 "3. Per ogni categoria di strutturati quante sono le persone con uno stipendio che
 differisce di al massimo una deviazione standard dalla media della loro categoria?"
--- CG
+--_______
 WITH deviazione_standard_posizione AS (
   SELECT posizione, AVG(stipendio)::NUMERIC(10, 2) AS media_stipendio, STDDEV(stipendio)::NUMERIC(10, 2) AS deviazione_standard FROM persona
   GROUP BY posizione 
