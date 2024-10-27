@@ -87,44 +87,29 @@ HAVING AVG(volo.durataminuti) > ((SELECT durata_media_generica FROM durata_media
 
 "6. Quali sono le nazioni che hanno il maggior numero di città dalle quali partono voli
 diretti in altre nazioni?"
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+--_______2
+-- ?
+WITH partenza_arrivo_stessa_nazione_query AS (
+    SELECT  a_partenza.nazione, arrpart.partenza, a_arrivo.nazione, arrpart.arrivo FROM arrpart
+    INNER JOIN luogoaeroporto AS a_partenza ON a_partenza.aeroporto = arrpart.partenza
+    INNER JOIN luogoaeroporto AS a_arrivo ON a_arrivo.aeroporto = arrpart.arrivo
+    WHERE a_partenza.nazione = a_arrivo.nazione
+),
+arrpart_condizione6_query AS (
+    SELECT *, CASE
+        WHEN arrpart.partenza IN (SELECT partenza_arrivo_stessa_nazione_query.partenza FROM partenza_arrivo_stessa_nazione_query)
+            AND arrpart.arrivo IN (SELECT partenza_arrivo_stessa_nazione_query.arrivo FROM partenza_arrivo_stessa_nazione_query)
+    THEN 0 ELSE 1 END AS condizione6
+    FROM arrpart
+),
+numero_citta_partenze_query AS (
+    SELECT luogoaeroporto.nazione, COUNT(DISTINCT luogoaeroporto.citta) AS numero_citta_partenze FROM luogoaeroporto
+    INNER JOIN arrpart_condizione6_query ON luogoaeroporto.aeroporto = arrpart_condizione6_query.partenza
+    WHERE condizione6 = 1
+    GROUP BY luogoaeroporto.nazione
+),
+max_citta_partenze_query AS (
+    SELECT MAX(numero_citta_partenze) AS max_citta_partenze FROM numero_citta_partenze_query
+)
+SELECT nazione, numero_citta_partenze FROM numero_citta_partenze_query, max_citta_partenze_query
+WHERE max_citta_partenze = numero_citta_partenze;
