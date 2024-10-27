@@ -62,59 +62,69 @@ WITH voli_partenza_italia_durata_media_query AS (
     INNER JOIN luogoaeroporto ON luogoaeroporto.aeroporto = arrpart.partenza
     WHERE luogoaeroporto.nazione = 'Italy'
 )
-SELECT arrpart.comp, voli_partenza_italia_durata_media_query.voli_partenza_italia_durata_media AS durata_media FROM arrpart
+SELECT arrpart.comp, (SELECT * FROM voli_partenza_italia_durata_media_query) AS durata_media FROM arrpart
 CROSS JOIN voli_partenza_italia_durata_media_query -- ?
 INNER JOIN volo ON arrpart.codice = volo.codice
 INNER JOIN luogoaeroporto ON luogoaeroporto.aeroporto = arrpart.partenza
 WHERE luogoaeroporto.nazione = 'Italy'
 GROUP BY arrpart.comp, voli_partenza_italia_durata_media_query.voli_partenza_italia_durata_media
-HAVING AVG(volo.durataminuti) < voli_partenza_italia_durata_media_query.voli_partenza_italia_durata_media;
-
-
-
-
-
-
-
-
--- INNER JOIN luogoaeroporto ON arrpart.partenza = luogoaeroporto.aeroporto
--- INNER JOIN volo ON 
-
-
-SELECT arrpart.comp FROM arrpart
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+HAVING AVG(volo.durataminuti) < (SELECT * FROM voli_partenza_italia_durata_media_query);
 
 "5. Quali sono le città i cui voli in arrivo hanno una durata media che differisce di più
 di una deviazione standard dalla durata media di tutti i voli? Restituire città e
 durate medie dei voli in arrivo."
+WITH durata_media_deviazione_standard_generica_query AS (
+    SELECT AVG(durataminuti) AS durata_media_generica, STDDEV(durataminuti) AS deviazione_standard_generica FROM volo
+)   
+SELECT luogoaeroporto.citta, AVG(volo.durataminuti)::NUMERIC(10, 2) AS durata_media_per_citta FROM luogoaeroporto
+INNER JOIN arrpart ON luogoaeroporto.aeroporto = arrpart.arrivo
+INNER JOIN volo ON arrpart.codice = volo.codice
+GROUP BY luogoaeroporto.citta
+HAVING AVG(volo.durataminuti) > ((SELECT durata_media_generica FROM durata_media_deviazione_standard_generica_query)
+    + (SELECT deviazione_standard_generica FROM durata_media_deviazione_standard_generica_query))
+    OR AVG(volo.durataminuti) < ((SELECT durata_media_generica FROM durata_media_deviazione_standard_generica_query) 
+    - (SELECT deviazione_standard_generica FROM durata_media_deviazione_standard_generica_query));
 
 "6. Quali sono le nazioni che hanno il maggior numero di città dalle quali partono voli
 diretti in altre nazioni?"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
