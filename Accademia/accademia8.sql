@@ -10,106 +10,147 @@ SELECT * FROM attivitaprogetto;
 
 SELECT * FROM attivitanonprogettuale;
 
--- |||
-
 "1. Quali sono le persone (id, nome e cognome) che hanno avuto assenze solo nei
-giorni in cui non avevano alcuna attivitÃ (progettuali o non progettuali)?"
--- Primo risultato
-WITH attivita AS (
-SELECT persona, giorno FROM attivitaprogetto
-UNION
-SELECT persona, giorno FROM attivitanonprogettuale
-), 
-assenze_senza_attivita AS (
-    SELECT assenza.giorno, assenza.persona,
-    CASE
-        WHEN assenza.giorno != attivita.giorno
-        THEN 1 ELSE 0 END AS ass_att_gio
-    FROM assenza
-    INNER JOIN attivita ON assenza.persona = attivita.persona
+giorni in cui non avevano alcuna attività (progettuali o non progettuali)?"
+-- persona, assenza, attivitaprogetto, attivitanonprogettuale - EXISTS(?)
+-- Il risultato coincide, ma ritorna anche le persona che non hanno
+-- avuto assenze. A noi ci interessa "le persona che hanno avute assenze solo nei ...".
+WITH ga AS (
+    SELECT persona, giorno giorno_att
+    FROM attivitaprogetto
+    UNION
+    SELECT persona, giorno giorno_att
+    FROM attivitanonprogettuale
+),
+ga_ass AS (
+    SELECT ass.persona
+    FROM assenza ass
+    INNER JOIN ga
+        ON ga.persona = ass.persona
+    WHERE ass.giorno = ga.giorno_att
 )
-SELECT DISTINCT persona.id, persona.nome, persona.cognome FROM persona, assenze_senza_attivita
-WHERE persona.id NOT IN (
-    SELECT assenze_senza_attivita.persona FROM assenze_senza_attivita
-    WHERE ass_att_gio = 0
+SELECT id, nome, cognome
+FROM persona
+WHERE id NOT IN (
+    SELECT *
+    FROM ga_ass
 )
-ORDER BY persona.id;
+ORDER BY id;
 
--- Secondo risultato
-WITH attivita AS (
-SELECT persona, giorno FROM attivitaprogetto
-UNION
-SELECT persona, giorno FROM attivitanonprogettuale
-), 
-assenze_senza_attivita AS (
-    SELECT assenza.giorno, attivita.giorno, assenza.persona,
-    CASE
-        WHEN attivita.giorno IS NULL
-        THEN 1 ELSE 0 END AS ass_att_gio
-    FROM assenza
-    LEFT JOIN attivita ON assenza.persona = attivita.persona AND assenza.giorno = attivita.giorno
+--_______
+-- E' la stessa ma è stato aggiunto 'AND id IN (SELECT persona FROM assenza)'
+-- In teoria è giusta, ma il risultato non coincide con la risposta.
+WITH ga AS (
+    SELECT persona, giorno AS giorno_att
+    FROM attivitaprogetto
+    UNION
+    SELECT persona, giorno
+    FROM attivitanonprogettuale
+),
+ga_ass AS (
+    SELECT ass.persona
+    FROM assenza ass
+    INNER JOIN ga
+        ON ga.persona = ass.persona
+       AND ass.giorno = ga.giorno_att
 )
-SELECT DISTINCT persona.id, persona.nome, persona.cognome FROM persona, assenze_senza_attivita
-WHERE persona.id NOT IN (
-    SELECT assenze_senza_attivita.persona FROM assenze_senza_attivita
-    WHERE ass_att_gio = 0
-)
-ORDER BY persona.id;
+SELECT id, nome, cognome
+FROM persona
+WHERE id NOT IN (SELECT persona FROM ga_ass)
+  AND id IN (SELECT persona FROM assenza)
+ORDER BY id;
+
+--_______
+-- In teoria è giusta ma il risultato, anche se è simile, non coincide con la risposta.
+SELECT DISTINCT p.id, p.nome, p.cognome
+FROM Persona p
+WHERE NOT EXISTS (
+  SELECT 1
+  FROM Assenza a
+  WHERE a.persona = p.id
+    AND EXISTS (
+      SELECT 1
+      FROM AttivitaProgetto ap
+      WHERE ap.persona = p.id AND ap.giorno = a.giorno
+    )
+    OR EXISTS (
+      SELECT 1
+      FROM AttivitaNonProgettuale anp
+      WHERE anp.persona = p.id AND anp.giorno = a.giorno
+    )
+);
 
 "2. Quali sono le persone (id, nome e cognome) che non hanno mai partecipato ad
 alcun progetto durante la durata del progetto “Pegasus”?"
-WITH progetto_pegasus AS (
-    SELECT inizio, fine FROM progetto
-    WHERE progetto.id = 1
-),
-pegasus_e_attivitaprogetto AS (
-    SELECT attivitaprogetto.progetto, attivitaprogetto.persona, attivitaprogetto.giorno, progetto_pegasus.inizio FROM attivitaprogetto
-    LEFT JOIN progetto_pegasus ON attivitaprogetto.giorno BETWEEN progetto_pegasus.inizio AND progetto_pegasus.fine
-    WHERE progetto_pegasus.inizio IS NOT NULL
+-- persona, progetto, attivitaprogetto - WITH
+-- Il risulato combacia con la risposta, e la query sembra scritta bene.
+-- Però forse ci sta qualcosa di sbagliato nell'INNER JOIN di peg.
+WITH peg AS (
+    SELECT ap.persona
+    FROM attivitaprogetto ap
+    INNER JOIN progetto pr
+        ON ap.giorno
+            BETWEEN pr.inizio AND pr.fine
+    WHERE pr.nome = 'Pegasus'
 )
-SELECT DISTINCT persona.id, persona.nome, persona.cognome FROM persona, pegasus_e_attivitaprogetto
-WHERE persona.id NOT IN (
-    SELECT pegasus_e_attivitaprogetto.persona FROM pegasus_e_attivitaprogetto
+SELECT DISTINCT pe.id, pe.nome, pe.cognome
+FROM persona pe
+WHERE pe.id NOT IN (
+    SELECT *
+    FROM peg
 )
-ORDER BY persona.id;
+ORDER BY pe.id;
 
 "3. Quali sono id, nome, cognome e stipendio dei ricercatori con stipendio maggiore
 di tutti i professori (associati e ordinari)?"
--- Con LEFT JOIN
-WITH professori AS (
-    SELECT MAX(stipendio) AS stipendio_professori FROM persona
+-- persona - MAX() - WITH
+-- In teoria non serve il ditsinct. pe.id dovrebbe avere solo valori distinti visto che è una primary key.
+WITH mp AS (
+    SELECT MAX(stipendio) max_prof
+    FROM persona
     WHERE posizione IN ('Professore Associato', 'Professore Ordinario')
 )
-SELECT DISTINCT persona.id, persona.nome, persona.cognome, persona.stipendio, professori.stipendio_professori FROM persona
-LEFT JOIN professori ON persona.stipendio > stipendio_professori
-WHERE stipendio_professori IS NOT NULL;
-
--- Con INNER JOIN
-WITH professori AS (
-    SELECT MAX(stipendio) AS stipendio_professori FROM persona
-    WHERE posizione IN ('Professore Associato', 'Professore Ordinario')
-)
-SELECT DISTINCT persona.id, persona.nome, persona.cognome, persona.stipendio, professori.stipendio_professori FROM persona
-INNER JOIN professori ON persona.stipendio > stipendio_professori;
+SELECT pe.id, pe.nome, pe.cognome, pe.stipendio
+FROM persona pe
+CROSS JOIN mp
+WHERE pe.posizione = 'Ricercatore'
+    AND pe.stipendio > mp.max_prof;
 
 "4. Quali sono le persone che hanno lavorato su progetti con un budget superiore alla
 media dei budget di tutti i progetti?"
-SELECT persona.id, persona.nome, persona.cognome FROM attivitaprogetto
-INNER JOIN persona ON persona.id = attivitaprogetto.persona
-INNER JOIN progetto ON progetto.id = attivitaprogetto.progetto
-WHERE progetto.budget > (
-    SELECT AVG(budget) AS media_budget_progetto FROM progetto
-);
+-- persona, attivitaprogetto, progetto - AVG() - WITH
+WITH mp AS (
+    SELECT AVG(budget) media_progetto
+    FROM progetto
+)
+SELECT DISTINCT pe.id, pe.nome, pe.cognome
+FROM persona pe
+INNER JOIN attivitaprogetto ap
+    ON ap.persona = pe.id
+INNER JOIN progetto pr
+    ON pr.id = ap.progetto
+CROSS JOIN mp
+WHERE pr.budget > mp.media_progetto;
 
-"5. Quali sono i progetti con un budget inferiore allala media, ma con un numero
+"5. Quali sono i progetti con un budget inferiore alla media, ma con un numero
 complessivo di ore dedicate alle attività di ricerca sopra la media?"
-SELECT DISTINCT progetto.id, progetto.nome FROM attivitaprogetto
-INNER JOIN persona ON persona.id = attivitaprogetto.persona
-INNER JOIN progetto ON progetto.id = attivitaprogetto.progetto
-WHERE progetto.budget < (
-    SELECT AVG(budget) AS media_budget_progetto FROM progetto
-) 
-AND attivitaprogetto.oredurata > (
-    SELECT AVG(oredurata) FROM attivitaprogetto
-    WHERE tipo = 'Ricerca e Sviluppo'
-);
+-- progetto, attivitaprogetto - AVG(), SUM() - WITH
+-- Non serve DISTINCT se usi GROUP BY
+WITH mb AS (
+    SELECT AVG(budget) media_budget
+    FROM progetto
+),
+mo AS (
+    SELECT AVG(oredurata) media_ore
+    FROM attivitaprogetto ap
+)
+SELECT pr.id, pr.nome
+FROM progetto pr
+INNER JOIN attivitaprogetto ap
+    ON ap.progetto = pr.id
+CROSS JOIN mb
+CROSS JOIN mo
+WHERE pr.budget < mb.media_budget
+    AND ap.tipo = 'Ricerca e Sviluppo'
+GROUP BY pr.id, pr.nome, mo.media_ore
+HAVING SUM(ap.oredurata) > mo.media_ore;
