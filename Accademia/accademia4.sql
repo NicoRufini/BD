@@ -14,23 +14,32 @@ SELECT * FROM attivitanonprogettuale;
 SELECT DISTINCT cognome FROM persona;
 
 "2. Quali sono i Ricercatori (con nome e cognome)?"
-SELECT id, nome, cognome, posizione FROM persona WHERE posizione = 'Ricercatore';
+SELECT nome, cognome FROM persona p
+WHERE posizione = 'Ricercatore';
 
 "3. Quali sono i Professori Associati il cui cognome comincia con la lettera 'V'?"
-SELECT id, nome, cognome, posizione FROM persona WHERE posizione = 'Professore Associato' AND cognome ILIKE 'V%';
+SELECT * FROM persona
+WHERE posizione = 'Professore Associato'
+    AND cognome LIKE 'V%';
 
 "4. Quali sono i Professori (sia Associati che Ordinari) il cui cognome comincia con la
 lettera 'V'?"
-SELECT id, nome, cognome, posizione FROM persona WHERE posizione IN ('Professore Associato', 'Professore Ordinario') AND cognome ILIKE 'V%';
+SELECT * FROM persona
+WHERE posizione IN ('Professore Associato', 'Professore Ordinario')
+    AND cognome LIKE 'V%';
 
 "5. Quali sono i Progetti già terminati alla data odierna?"
-SELECT * FROM progetto;
+--In teoria è cosi, ma non combacia con il risultato
+SELECT * FROM progetto
+WHERE fine = CURRENT_DATE; --CURRENT_DATE = Data odierna 
 
 "6. Quali sono i nomi di tutti i Progetti ordinati in ordine crescente di data di inizio?"
-SELECT id, nome FROM progetto ORDER BY inizio;
+SELECT nome FROM progetto
+ORDER BY inizio;
 
 "7. Quali sono i nomi dei WP ordinati in ordine crescente (per nome)?"
-SELECT id, nome FROM WP ORDER BY nome;
+SELECT nome FROM WP
+ORDER BY nome;
 
 "8. Quali sono (distinte) le cause di assenza di tutti gli strutturati?"
 SELECT DISTINCT tipo FROM assenza;
@@ -40,4 +49,5 @@ SELECT DISTINCT tipo FROM attivitaprogetto;
 
 "10. Quali sono i giorni distinti nei quali del personale ha effettuato attività non progettuali
 di tipo 'Didattica'? Dare il risultato in ordine crescente."
-SELECT DISTINCT giorno FROM attivitanonprogettuale WHERE tipo = 'Didattica';
+SELECT DISTINCT giorno FROM attivitanonprogettuale
+WHERE tipo = 'Didattica';
