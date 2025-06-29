@@ -8,110 +8,152 @@ SELECT * FROM luogoaeroporto;
 
 SELECT * FROM volo;
 
--- |||
-
 "1. Qual è la durata media, per ogni compagnia, dei voli che partono da un aeroporto
 situato in Italia?"
-SELECT volo.comp, AVG(volo.durataminuti)::NUMERIC(10, 2) AS durata_media FROM volo
-INNER JOIN arrpart ON arrpart.codice = volo.codice
-INNER JOIN luogoaeroporto ON luogoaeroporto.aeroporto = arrpart.partenza
-WHERE luogoaeroporto.nazione = 'Italy'
-GROUP BY volo.comp;
+-- arrpart, luogoaeroporto, volo - AVG()
+SELECT v.comp, AVG(v.durataminuti)
+FROM volo v
+INNER JOIN arrpart ap
+    ON ap.comp = v.comp
+        AND ap.codice = v.codice
+INNER JOIN luogoaeroporto la
+    ON la.aeroporto = ap.partenza
+WHERE la.nazione = 'Italy'
+GROUP BY v.comp;
 
 "2. Quali sono le compagnie che operano voli con durata media maggiore della durata
 media di tutti i voli?"
-WITH volo_durata_media AS (
-    SELECT AVG(volo.durataminuti)::NUMERIC(10, 2) AS durata_media_generica FROM volo
+-- volo - AVG
+WITH mvt AS (
+    SELECT AVG(durataminuti) durataminuti_media_totale
+    FROM volo
 )
-SELECT volo.comp, AVG(volo.durataminuti)::NUMERIC(10, 2) AS durata_media FROM volo, volo_durata_media
-GROUP BY volo.comp, volo_durata_media.durata_media_generica
-HAVING AVG(volo.durataminuti) > volo_durata_media.durata_media_generica;
+SELECT comp, AVG(durataminuti) durataminuti_media_comp
+FROM volo v
+CROSS JOIN mvt
+GROUP BY comp, mvt.durataminuti_media_totale
+HAVING AVG(durataminuti) > mvt.durataminuti_media_totale;
 
 "3. Quali sono le città dove il numero totale di voli in arrivo è maggiore del numero
 medio dei voli in arrivo per ogni città?" 
-WITH voli_arrivo_query AS (
-    SELECT luogoaeroporto.citta, COUNT(DISTINCT arrpart.codice) AS voli_arrivo FROM arrpart -- DISTINCT in questo caso non è necessario
-    INNER JOIN luogoaeroporto ON luogoaeroporto.aeroporto = arrpart.arrivo
-    GROUP BY luogoaeroporto.citta
+WITH voli_arrivo AS (
+    SELECT la.citta, COUNT(ap.arrivo) n_voli_arrivo
+    FROM arrpart ap
+    INNER JOIN luogoaeroporto la
+        ON la.aeroporto = ap.arrivo
+    GROUP BY la.citta
 ),
-media_voli_arrivo_query AS (
-    SELECT AVG(voli_arrivo_query.voli_arrivo) AS media_voli_arrivo FROM arrpart, voli_arrivo_query
+voli_media AS (
+    SELECT AVG(n_voli_arrivo) media
+    FROM voli_arrivo
 )
-SELECT citta, voli_arrivo FROM voli_arrivo_query, media_voli_arrivo_query
-WHERE voli_arrivo > media_voli_arrivo;
+SELECT la.citta, COUNT(ap.arrivo) n_voli_arrivo_citta
+FROM luogoaeroporto la
+INNER JOIN arrpart ap
+    ON ap.arrivo = la.aeroporto
+CROSS JOIN voli_media
+GROUP BY la.citta, media
+HAVING COUNT(ap.arrivo) > media;
 
 "4. Quali sono le compagnie aeree che hanno voli in partenza da aeroporti in Italia con
 una durata media inferiore alla durata media di tutti i voli in partenza da aeroporti
 in Italia?"
---- Prima soluzione - durata_media NON è quella del risultato
-WITH voli_partenza_italia_durata_media_query AS (
-    SELECT AVG(volo.durataminuti) AS voli_partenza_italia_durata_media FROM volo
-    INNER JOIN arrpart ON arrpart.codice = volo.codice
-    INNER JOIN luogoaeroporto ON luogoaeroporto.aeroporto = arrpart.partenza
-    WHERE luogoaeroporto.nazione = 'Italy'
+-- In teoria è giusta ma il risultato non combacia.
+--arrpart, luogoaeroporto, volo - AVG()
+WITH durata_media_Italia AS (
+    SELECT AVG(v.durataminuti) durataminuti_media_Italia
+    FROM volo v
+    INNER JOIN arrpart ap
+        ON ap.comp = v.comp
+            AND ap.codice = v.codice
+    INNER JOIN luogoaeroporto la
+        ON la.aeroporto = ap.partenza
+    WHERE la.nazione = 'Italy'
 )
-SELECT arrpart.comp, AVG(volo.durataminuti) AS durata_media FROM arrpart
-INNER JOIN volo ON arrpart.codice = volo.codice
-INNER JOIN luogoaeroporto ON luogoaeroporto.aeroporto = arrpart.partenza
-WHERE luogoaeroporto.nazione = 'Italy'
-GROUP BY arrpart.comp
-HAVING AVG(volo.durataminuti) < (SELECT * FROM voli_partenza_italia_durata_media_query);
-
--- Seconda soluzione
-WITH voli_partenza_italia_durata_media_query AS (
-    SELECT AVG(volo.durataminuti) AS voli_partenza_italia_durata_media FROM volo
-    INNER JOIN arrpart ON arrpart.codice = volo.codice
-    INNER JOIN luogoaeroporto ON luogoaeroporto.aeroporto = arrpart.partenza
-    WHERE luogoaeroporto.nazione = 'Italy'
-)
-SELECT arrpart.comp, (SELECT * FROM voli_partenza_italia_durata_media_query) AS durata_media FROM arrpart
-CROSS JOIN voli_partenza_italia_durata_media_query -- ?
-INNER JOIN volo ON arrpart.codice = volo.codice
-INNER JOIN luogoaeroporto ON luogoaeroporto.aeroporto = arrpart.partenza
-WHERE luogoaeroporto.nazione = 'Italy'
-GROUP BY arrpart.comp, voli_partenza_italia_durata_media_query.voli_partenza_italia_durata_media
-HAVING AVG(volo.durataminuti) < (SELECT * FROM voli_partenza_italia_durata_media_query);
+SELECT v.comp, AVG(v.durataminuti) durataminuti_media_comp_Italia
+FROM volo v
+INNER JOIN arrpart ap
+    ON ap.comp = v.comp
+        AND ap.codice = v.codice
+INNER JOIN luogoaeroporto la
+    ON la.aeroporto = ap.partenza
+CROSS JOIN durata_media_Italia
+WHERE la.nazione = 'Italy'
+GROUP BY v.comp, durataminuti_media_Italia
+HAVING AVG(v.durataminuti) < durata_media_Italia.durataminuti_media_Italia;
 
 "5. Quali sono le città i cui voli in arrivo hanno una durata media che differisce di più
 di una deviazione standard dalla durata media di tutti i voli? Restituire città e
 durate medie dei voli in arrivo."
-WITH durata_media_deviazione_standard_generica_query AS (
-    SELECT AVG(durataminuti) AS durata_media_generica, STDDEV(durataminuti) AS deviazione_standard_generica FROM volo
-)   
-SELECT luogoaeroporto.citta, AVG(volo.durataminuti)::NUMERIC(10, 2) AS durata_media_per_citta FROM luogoaeroporto
-INNER JOIN arrpart ON luogoaeroporto.aeroporto = arrpart.arrivo
-INNER JOIN volo ON arrpart.codice = volo.codice
-GROUP BY luogoaeroporto.citta
-HAVING AVG(volo.durataminuti) > ((SELECT durata_media_generica FROM durata_media_deviazione_standard_generica_query)
-    + (SELECT deviazione_standard_generica FROM durata_media_deviazione_standard_generica_query))
-    OR AVG(volo.durataminuti) < ((SELECT durata_media_generica FROM durata_media_deviazione_standard_generica_query) 
-    - (SELECT deviazione_standard_generica FROM durata_media_deviazione_standard_generica_query));
+--_______
+WITH media_dev_totale AS (
+    SELECT AVG(v.durataminuti) media_totale, STDDEV(v.durataminuti) dev_totale
+    FROM volo v
+    INNER JOIN arrpart ap
+        ON ap.codice = v.codice
+            AND ap.comp = v.comp
+),
+mc AS (
+    SELECT la.citta, AVG(v.durataminuti) media_citta
+    FROM volo v
+    INNER JOIN arrpart ap
+        ON ap.codice = v.codice
+            AND ap.comp = v.comp
+    INNER JOIN luogoaeroporto la
+        ON la.aeroporto = ap.arrivo
+    GROUP BY la.citta
+)
+SELECT mc.*
+FROM mc
+CROSS JOIN media_dev_totale
+WHERE (media_dev_totale.media_totale - mc.media_citta) > media_dev_totale.dev_totale;
 
 "6. Quali sono le nazioni che hanno il maggior numero di città dalle quali partono voli
 diretti in altre nazioni?"
---_______2
--- ?
-WITH partenza_arrivo_stessa_nazione_query AS (
-    SELECT  a_partenza.nazione, arrpart.partenza, a_arrivo.nazione, arrpart.arrivo FROM arrpart
-    INNER JOIN luogoaeroporto AS a_partenza ON a_partenza.aeroporto = arrpart.partenza
-    INNER JOIN luogoaeroporto AS a_arrivo ON a_arrivo.aeroporto = arrpart.arrivo
-    WHERE a_partenza.nazione = a_arrivo.nazione
+-- La query non è corretta in SQL standard, se eseguita su altri DBMS (MySQL, Oracle, SQL Server, ecc.)
+-- dovrebbe dare errore. PostgreSQL tuttavia, consente alcune estensioni non standard di SQL,
+-- quindi su pgAdmin NON da errore.
+WITH nazioni_citta_partenze_altre_nazioni AS (
+SELECT la1.nazione, la1.citta, COUNT(ap.partenza) n_partenze --COUNT(ap.partenza NON è obbligatorio)
+FROM arrpart ap
+INNER JOIN luogoaeroporto la1
+    ON ap.partenza = la1.aeroporto
+INNER JOIN luogoaeroporto la2
+    ON ap.arrivo = la2.aeroporto
+WHERE la1.nazione != la2.nazione
+GROUP BY la1.nazione, la1.citta
+HAVING COUNT(ap.partenza) >= 1
 ),
-arrpart_condizione6_query AS (
-    SELECT *, CASE
-        WHEN arrpart.partenza IN (SELECT partenza_arrivo_stessa_nazione_query.partenza FROM partenza_arrivo_stessa_nazione_query)
-            AND arrpart.arrivo IN (SELECT partenza_arrivo_stessa_nazione_query.arrivo FROM partenza_arrivo_stessa_nazione_query)
-    THEN 0 ELSE 1 END AS condizione6
-    FROM arrpart
-),
-numero_citta_partenze_query AS (
-    SELECT luogoaeroporto.nazione, COUNT(DISTINCT luogoaeroporto.citta) AS numero_citta_partenze FROM luogoaeroporto
-    INNER JOIN arrpart_condizione6_query ON luogoaeroporto.aeroporto = arrpart_condizione6_query.partenza
-    WHERE condizione6 = 1
-    GROUP BY luogoaeroporto.nazione
-),
-max_citta_partenze_query AS (
-    SELECT MAX(numero_citta_partenze) AS max_citta_partenze FROM numero_citta_partenze_query
+count_ncpan AS (
+SELECT nazione, COUNT(nazione) n_citta
+FROM nazioni_citta_partenze_altre_nazioni
+GROUP BY nazione
 )
-SELECT nazione, numero_citta_partenze FROM numero_citta_partenze_query, max_citta_partenze_query
-WHERE max_citta_partenze = numero_citta_partenze;
+SELECT nazione, n_citta
+FROM count_ncpan
+GROUP BY nazione, n_citta
+HAVING n_citta = MAX(n_citta);
+
+-- Questa è corretta in SQL standard.
+--_______
+WITH nazioni_citta_partenze_altre_nazioni AS (
+    SELECT la1.nazione, la1.citta
+    FROM arrpart ap
+    INNER JOIN luogoaeroporto la1 ON ap.partenza = la1.aeroporto
+    INNER JOIN luogoaeroporto la2 ON ap.arrivo = la2.aeroporto
+    WHERE la1.nazione != la2.nazione
+    GROUP BY la1.nazione, la1.citta
+),
+count_ncpan AS (
+    SELECT nazione, COUNT(*) AS n_citta
+    FROM nazioni_citta_partenze_altre_nazioni
+    GROUP BY nazione
+),
+max_citta AS (
+    SELECT MAX(n_citta) AS max_n_citta
+    FROM count_ncpan
+)
+SELECT c.nazione, c.n_citta
+FROM count_ncpan c
+CROSS JOIN max_citta m
+WHERE c.n_citta = m.max_n_citta;
